@@ -100,6 +100,69 @@ export default function TaskList({
         </Modal>
       )}
 
+      {/* Edit Task Modal */}
+      {editingId && (
+        <Modal onClose={() => setEditingId(null)}>
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              onSaveEdit(editingId, {
+                title: editData.title,
+                description: editData.description,
+                dueDate: editData.dueDate,
+                labels: editData.labelsStr.split(',').map(l => l.trim()).filter(Boolean)
+              });
+              setEditingId(null);
+            }}
+            className="space-y-4 p-2"
+          >
+            <h2 className="text-lg font-bold mb-2">Edit Task</h2>
+            <input
+              type="text"
+              className="w-full p-2 border rounded dark:text-black"
+              placeholder="Title"
+              value={editData.title}
+              onChange={e => setEditData(d => ({ ...d, title: e.target.value }))}
+              required
+            />
+            <textarea
+              className="w-full p-2 border rounded dark:text-black"
+              placeholder="Description"
+              value={editData.description}
+              onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
+            />
+            <input
+              type="date"
+              className="w-full p-2 border rounded dark:text-black"
+              value={editData.dueDate}
+              onChange={e => setEditData(d => ({ ...d, dueDate: e.target.value }))}
+            />
+            <input
+              type="text"
+              className="w-full p-2 border rounded dark:text-black"
+              placeholder="Labels (comma separated)"
+              value={editData.labelsStr}
+              onChange={e => setEditData(d => ({ ...d, labelsStr: e.target.value }))}
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400"
+                onClick={() => setEditingId(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
       {/* Task List */}
       <AnimatePresence>
         {tasks.length === 0 ? (
@@ -198,27 +261,6 @@ export default function TaskList({
           </ul>
         )}
       </AnimatePresence>
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-4 text-sm text-gray-500 dark:text-gray-400">
-          <button
-            disabled={currentPage === 0}
-            onClick={() => setCurrentPage(p => p - 1)}
-            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ◀ Prev
-          </button>
-          <span className="mx-2">
-            Page {currentPage + 1} of {totalPages}
-          </span>
-          <button
-            disabled={currentPage >= totalPages - 1}
-            onClick={() => setCurrentPage(p => p + 1)}
-            className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Next ▶
-          </button>
-        </div>
-      )}
     </div>
   )
 }
