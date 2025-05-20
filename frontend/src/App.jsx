@@ -1,4 +1,3 @@
-// src/App.jsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { useContext, useState } from 'react'
@@ -6,7 +5,7 @@ import { ThemeContext } from './context/ThemeContext'
 import { TaskContext } from './context/TaskContext'
 
 import Dashboard from './pages/Dashboard'
-import Login from './components/Login';      // Make sure it's the right path
+import Login from './components/Login';
 import Register from './components/Register';
 import ProjectPage from './pages/ProjectPage'
 import CalendarPage from './pages/Calendar';
@@ -31,14 +30,11 @@ export default function App() {
             path="/"
             element={<Navigate to={user ? '/dashboard' : '/login'} />}
           />
-
-
+          <Route path="/login" element={<Login />} />         {/* <-- Add this */}
+          <Route path="/register" element={<Register />} />   {/* <-- Add this */}
           <Route path="/project/:id" element={<ProjectPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route
-            path="/calendar"
-            element={<CalendarPage />}
-          />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/stats" element={<StatsPage />} />
         </Routes>
       </TaskContext.Provider>
