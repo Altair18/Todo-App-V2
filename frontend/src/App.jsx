@@ -16,6 +16,8 @@ export default function App() {
   const { dark, setDark } = useContext(ThemeContext)
   const [tasks, setTasks] = useState([]) // Only one source of truth
 
+  console.log("Auth user:", user); // Debug: see what user is
+
   if (loading) return <div className="p-4">Loading…</div>
 
   return (
@@ -26,16 +28,13 @@ export default function App() {
     `}>
       <TaskContext.Provider value={{ tasks, setTasks }}>
         <Routes>
-          <Route
-            path="/"
-            element={<Navigate to={user ? '/dashboard' : '/login'} />}
-          />
-          <Route path="/login" element={<Login />} />         {/* <-- Add this */}
-          <Route path="/register" element={<Register />} />   {/* <-- Add this */}
-          <Route path="/project/:id" element={<ProjectPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
+          <Route path="/project/:id" element={user ? <ProjectPage /> : <Navigate to="/login" />} />
+          <Route path="/calendar" element={user ? <CalendarPage /> : <Navigate to="/login" />} />
+          <Route path="/stats" element={user ? <StatsPage /> : <Navigate to="/login" />} />
+          <Route path="/" element={<Navigate to={user ? '/dashboard' : '/login'} />} />
         </Routes>
       </TaskContext.Provider>
     </main>
