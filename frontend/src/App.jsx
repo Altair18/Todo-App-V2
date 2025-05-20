@@ -6,11 +6,12 @@ import { ThemeContext } from './context/ThemeContext'
 import { TaskContext } from './context/TaskContext'
 
 import Dashboard from './pages/Dashboard'
-import Login from './components/Login';      // Make sure it's the right path
-import Register from './components/Register';
 import ProjectPage from './pages/ProjectPage'
 import CalendarPage from './pages/Calendar';
 import StatsPage from './pages/StatsPage';
+import Login from './components/Login.jsx';
+import Register from './components/Register.jsx';
+
 
 export default function App() {
   const { user, loading } = useContext(AuthContext)
@@ -31,6 +32,9 @@ export default function App() {
             path="/"
             element={<Navigate to={user ? '/dashboard' : '/login'} />}
           />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
 
 
           <Route path="/project/:id" element={<ProjectPage />} />
