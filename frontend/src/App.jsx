@@ -11,6 +11,8 @@ import ProjectPage from './pages/ProjectPage';
 import CalendarPage from './pages/Calendar';
 import StatsPage from './pages/StatsPage';
 
+// Importing the necessary components and contexts
+// Reads user and loading state from AuthContext
 export default function App() {
   const { user, loading } = useContext(AuthContext);
   const { dark, setDark } = useContext(ThemeContext);
@@ -28,31 +30,32 @@ export default function App() {
       transition-colors
     `}>
       <TaskContext.Provider value={{ tasks, setTasks }}>
+        {/* Two sets of routes (public) for login and register which is accesible if no user or when guest */}
         <Routes>
           {/* PUBLIC ROUTES */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* PROTECTED ROUTES */}
+          {/* PROTECTED ROUTES (which redirects to login if no valid user or guest) */}
           <Route
             path="/dashboard"
-            element={user ? <Dashboard /> : <Navigate to="/login" />}
+            element={user || localStorage.getItem('guest') === 'true' ? <Dashboard /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/project/:id"
-            element={user ? <ProjectPage /> : <Navigate to="/login" />}
+            element={user || localStorage.getItem('guest') === 'true' ? <ProjectPage /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/calendar"
-            element={user ? <CalendarPage /> : <Navigate to="/login" />}
+            element={user || localStorage.getItem('guest') === 'true' ? <CalendarPage /> : <Navigate to="/login" replace />}
           />
           <Route
             path="/stats"
-            element={user ? <StatsPage /> : <Navigate to="/login" />}
+            element={user || localStorage.getItem('guest') === 'true' ? <StatsPage /> : <Navigate to="/login" replace />}
           />
 
           {/* ROOT REDIRECT */}
-          <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
+          <Route path="/" element={<Navigate to={user || localStorage.getItem('guest') === 'true' ? "/dashboard" : "/login"} replace />} />
         </Routes>
       </TaskContext.Provider>
 
@@ -62,8 +65,9 @@ export default function App() {
         onClick={() => setShowSettings(true)}
         aria-label="Open settings"
       >
-        <span role="img" aria-label="settings">⚙️</span>
+        <span role="img" aria-label="settings">⚙️</span> {/* Settings icon to toggle between light and dark modes */}
       </button>
+
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -83,9 +87,9 @@ export default function App() {
                   setDark(!dark)
                 }}
               >
-                Toggle {dark ? 'Light' : 'Dark'} Mode
+                {/* Toggle between light and dark mode */}
+                Toggle {dark ? 'Light' : 'Dark'} Mode 
               </button>
-              {/* Add more settings here if needed */}
             </div>
           </div>
         </div>

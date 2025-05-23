@@ -1,10 +1,18 @@
-import { useState } from 'react';
+// LearningSchedule.jsx
+// Interactive component for tracking learning topics, subtopics, and recurring study schedules. Supports adding, removing, and marking subtopics as complete, and visualizes progress with a donut chart.
 
-// Just an array to help with day-of-week selection
+// Import React's useState for local state management
+import { useState } from 'react';
+import LearningProgressChart from './LearningProgressChart';
+
+// Array of weekday names for recurring schedule selection
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// Main LearningSchedule component
 export default function LearningSchedule({ onAddToCalendar }) {
+  // State for all learning topics
   const [topics, setTopics] = useState([]);
+  // State for the new topic form
   const [newTopic, setNewTopic] = useState({
     title: '',
     targetDate: '',
@@ -12,12 +20,12 @@ export default function LearningSchedule({ onAddToCalendar }) {
     daysOfWeek: [], // e.g. ['Mon', 'Wed', 'Fri']
   });
 
-  // Handler: Add a new main "topic" (with optional subtopics).
+  // Handler: Add a new main topic (with optional subtopics and schedule)
   const handleAddTopic = (e) => {
     e.preventDefault();
     if (!newTopic.title.trim()) return;
 
-    // Convert subtopics from comma-separated into array objects
+    // Convert comma-separated subtopics into array of objects
     const subtopicArray = newTopic.subtopics
       ? newTopic.subtopics.split(',').map((s, i) => ({
           id: i + 1,
@@ -26,23 +34,24 @@ export default function LearningSchedule({ onAddToCalendar }) {
         }))
       : [];
 
-    // For day-of-week (time blocks)
+    // Get selected days of week for recurring schedule
     const scheduleDays = newTopic.daysOfWeek || [];
 
+    // Create new topic object
     const newItem = {
-      id: Date.now(), // simple unique ID
+      id: Date.now(), // unique ID
       title: newTopic.title.trim(),
-      targetDate: newTopic.targetDate, // optional date
-      daysOfWeek: scheduleDays,        // array like ['Mon','Wed','Fri']
+      targetDate: newTopic.targetDate, // optional completion date
+      daysOfWeek: scheduleDays,        // e.g. ['Mon','Wed','Fri']
       subtopics: subtopicArray,
     };
 
+    // Add new topic to topics list
     setTopics((prev) => [...prev, newItem]);
+    // Reset form
     setNewTopic({ title: '', targetDate: '', subtopics: '', daysOfWeek: [] });
 
-    // (3) Example "calendar integration":
-    // If you want to push an event for the overall topic to a global calendar,
-    // call onAddToCalendar with appropriate data, if provided:
+    // Optionally add to calendar if callback provided
     if (onAddToCalendar && newItem.targetDate) {
       onAddToCalendar({
         title: `Study: ${newItem.title}`,
@@ -51,7 +60,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
     }
   };
 
-  // Toggle a subtopic's completion
+  // Toggle a subtopic's completion status
   const toggleSubtopic = (topicId, subId) => {
     setTopics((prev) =>
       prev.map((topic) => {
@@ -66,19 +75,19 @@ export default function LearningSchedule({ onAddToCalendar }) {
     );
   };
 
-  // Remove a topic entirely
+  // Remove a topic from the list
   const removeTopic = (topicId) => {
     setTopics((prev) => prev.filter((t) => t.id !== topicId));
   };
 
-  // Compute progress percentage for each topic
+  // Calculate progress percentage for a topic
   const getProgress = (topic) => {
     const total = topic.subtopics.length;
     const done = topic.subtopics.filter((st) => st.done).length;
     return total > 0 ? Math.round((done / total) * 100) : 0;
   };
 
-  // Toggle or set day-of-week for the new topic form
+  // Toggle a day-of-week for the new topic form
   const handleDayToggle = (day) => {
     setNewTopic((prev) => {
       const hasDay = prev.daysOfWeek.includes(day);
@@ -96,6 +105,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
     });
   };
 
+  // Render the learning schedule UI
   return (
     <div className="p-4 border rounded shadow-sm bg-white dark:bg-gray-800 dark:border-gray-700">
       <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-gray-200">
@@ -104,6 +114,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
 
       {/* ADD NEW TOPIC FORM */}
       <form onSubmit={handleAddTopic} className="space-y-3 mb-6">
+        {/* Topic title input */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Topic Title
@@ -117,6 +128,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
           />
         </div>
 
+        {/* Target completion date input */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Target Completion Date (optional)
@@ -129,6 +141,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
           />
         </div>
 
+        {/* Subtopics input */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Subtopics (comma-separated)
@@ -142,6 +155,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
           />
         </div>
 
+        {/* Recurring days selection */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Recurring Days (Time Blocks)
@@ -168,6 +182,7 @@ export default function LearningSchedule({ onAddToCalendar }) {
           </div>
         </div>
 
+        {/* Add topic button */}
         <button
           type="submit"
           className="py-2 px-4 bg-green-600 text-white rounded hover:bg-green-700 transition"
@@ -209,6 +224,46 @@ export default function LearningSchedule({ onAddToCalendar }) {
                     Remove
                   </button>
                 </div>
+
+                {/* Add Subtopic Form */}
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const input = e.target.elements[`subtopic-input-${topic.id}`];
+                    const value = input.value.trim();
+                    if (!value) return;
+                    setTopics(prev => prev.map(t =>
+                      t.id === topic.id
+                        ? {
+                            ...t,
+                            subtopics: [
+                              ...t.subtopics,
+                              {
+                                id: t.subtopics.length ? Math.max(...t.subtopics.map(st => st.id)) + 1 : 1,
+                                title: value,
+                                done: false,
+                              },
+                            ],
+                          }
+                        : t
+                    ));
+                    input.value = '';
+                  }}
+                  className="flex gap-2 mb-2"
+                >
+                  <input
+                    type="text"
+                    name={`subtopic-input-${topic.id}`}
+                    placeholder="Add subtopic..."
+                    className="flex-1 border p-1 rounded text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                  >
+                    Add
+                  </button>
+                </form>
 
                 {/* TIME BLOCKS DISPLAY */}
                 {topic.daysOfWeek && topic.daysOfWeek.length > 0 && (
@@ -257,6 +312,9 @@ export default function LearningSchedule({ onAddToCalendar }) {
           })}
         </ul>
       )}
+
+      {/* LEARNING PROGRESS DONUT CHART */}
+      <LearningProgressChart topics={topics} />
 
       {/* OVERALL STATS (optional) */}
       <div className="mt-6 text-sm text-gray-600 dark:text-gray-300">

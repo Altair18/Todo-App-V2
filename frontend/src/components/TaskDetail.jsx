@@ -1,4 +1,9 @@
+// TaskDetail.jsx
+
+// Displays detailed information for a single task, including title, description, due date, and labels.
+// If no task is selected, prompts the user to select a task.
 export default function TaskDetail({ task }) {
+    // If no task is selected, show a placeholder message
     if (!task) {
       return (
         <div className="p-4 rounded bg-white dark:bg-gray-800 text-gray-500">
@@ -7,20 +12,25 @@ export default function TaskDetail({ task }) {
       )
     }
   
+    // Render the details for the selected task
     return (
       <div className="p-6 rounded bg-white dark:bg-gray-800 space-y-4">
+        {/* Task title */}
         <h2 className="text-2xl font-bold">{task.title}</h2>
+        {/* Task description, if present */}
         {task.description && (
           <p className="text-gray-700 dark:text-gray-300">
             {task.description}
           </p>
         )}
+        {/* Task due date, if present */}
         {task.dueDate && (
           <p>
             <strong>Due:</strong>{' '}
             {new Date(task.dueDate).toLocaleDateString()}
           </p>
         )}
+        {/* Task labels, if present */}
         {task.labels?.length > 0 && (
           <div className="flex space-x-2">
             {task.labels.map(label => (
@@ -36,4 +46,3 @@ export default function TaskDetail({ task }) {
       </div>
     )
   }
-  

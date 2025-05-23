@@ -8,15 +8,17 @@ const router = express.Router();
 
 // GET all tasks (with optional filters & sorting)
 // backend/routes/tasks.js
-router.get('/', auth, async (req, res) => {
+
+//Protected by the auth middleware
+router.get('/', auth, async (req, res) => { 
   try {
     // Build the base filter
     const filter = { user: req.user._id };
     if (req.query.status) {
-      filter.done = req.query.status === 'done';           // ?status=done or ?status=pending
+      filter.done = req.query.status === 'done';      
     }
     if (req.query.label) {
-      filter.labels = req.query.label;                     // ?label=Work
+      filter.labels = req.query.label;                     
     }
 
     // Start the query
@@ -51,7 +53,8 @@ router.post('/', auth, async (req, res) => {
 });
 
 // GET one task + its subtasks
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', auth, async (req, res) => { // Get a single task by ID
+  // and its subtasks
   try {
     const task = await Task.findOne({ _id: req.params.id, user: req.user._id });
     if (!task) return res.status(404).json({ message: 'Task not found' });

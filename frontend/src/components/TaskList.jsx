@@ -1,3 +1,6 @@
+// TaskList.jsx
+// Renders a paginated, animated list of tasks with create, edit, delete, and toggle-done functionality for both guest and logged-in users.
+// Integrates with TaskForm and Modal, and supports framer-motion animations.
 import React, { useState, useContext } from 'react'
 import TaskForm from './TaskForm'
 import Modal from './Modal'
@@ -19,6 +22,7 @@ export default function TaskList({
   setShowForm
 }) {
   const { user } = useContext(AuthContext)
+  // State for editing a task
   const [editingId, setEditingId] = useState(null)
   const [editData, setEditData] = useState({
     title: '',
@@ -26,6 +30,7 @@ export default function TaskList({
     dueDate: '',
     labelsStr: ''
   })
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(0)
   const tasksPerPage = 3
   const totalPages = Math.ceil(tasks.length / tasksPerPage)
@@ -83,14 +88,13 @@ export default function TaskList({
     onToggleDone(id, done);
   }
 
-  // ✅ Return after hooks
+  // Show loading or error states
   if (loading) return <p>Loading…</p>
   if (error) return <p className="text-red-500">{error}</p>
 
   return (
     <div className="space-y-6">
-
-      {/* Task Create Modal */}
+      {/* Task Create Modal (opens TaskForm in a modal) */}
       {showForm && (
         <Modal onClose={() => setShowForm(false)}>
           <TaskForm onCreate={t => {
@@ -100,7 +104,7 @@ export default function TaskList({
         </Modal>
       )}
 
-      {/* Edit Task Modal */}
+      {/* Edit Task Modal (opens edit form in a modal) */}
       {editingId && (
         <Modal onClose={() => setEditingId(null)}>
           <form
@@ -116,6 +120,7 @@ export default function TaskList({
             }}
             className="space-y-4 p-2"
           >
+            {/* Edit Task Fields */}
             <h2 className="text-lg font-bold mb-2">Edit Task</h2>
             <input
               type="text"
@@ -163,7 +168,7 @@ export default function TaskList({
         </Modal>
       )}
 
-      {/* Task List */}
+      {/* Task List (paginated, animated) */}
       <AnimatePresence>
         {tasks.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400">No tasks yet.</p>
@@ -180,7 +185,7 @@ export default function TaskList({
                 transition={{ duration: 0.15 }}
               >
                 <div className="flex justify-between items-start gap-4">
-                  {/* Task Content */}
+                  {/* Task Content: title, description, due date, labels */}
                   <div className="flex-1 pr-2">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {task.title}
@@ -207,6 +212,7 @@ export default function TaskList({
                       ))}
                     </div>
                   </div>
+                  {/* Priority badge */}
                   {task.priority && (
                     <span
                       className={`inline-block mt-2 text-xs px-2 py-1 rounded-full font-medium
@@ -217,8 +223,9 @@ export default function TaskList({
                       {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
                     </span>
                   )}
-                  {/* Actions: checkbox + buttons */}
+                  {/* Actions: checkbox, edit, delete */}
                   <div className="flex flex-col items-end justify-between gap-2 min-w-[60px]">
+                    {/* Toggle done checkbox */}
                     <input
                       type="checkbox"
                       checked={task.done}
@@ -229,6 +236,7 @@ export default function TaskList({
                       className="form-checkbox h-4 w-4 text-blue-600 cursor-pointer"
                     />
 
+                    {/* Edit button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -245,6 +253,7 @@ export default function TaskList({
                       ✎ Edit
                     </button>
 
+                    {/* Delete button */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

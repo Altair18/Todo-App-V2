@@ -6,6 +6,8 @@ import 'react-calendar/dist/Calendar.css';
 import { useTasks } from '../context/TaskContext';
 import { Link } from 'react-router-dom'; // <-- Add this import
 
+//Displays a month view calendar with days marked when tasks are due
+// Clicking on a day shows a modal with tasks due on that day
 export default function CalendarPage() {
   const { tasks } = useTasks();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -15,17 +17,28 @@ export default function CalendarPage() {
   // Find tasks due on selectedDate
   const tasksForDate = tasks.filter(t => {
     if (!t.dueDate) return false;
-    const taskDate = new Date(t.dueDate).toISOString().slice(0, 10);
-    const selected = selectedDate.toISOString().slice(0, 10);
-    return taskDate === selected;
+    // Use local date string for comparison to avoid timezone issues
+    const taskDate = new Date(t.dueDate);
+    const selected = selectedDate;
+    return (
+      taskDate.getFullYear() === selected.getFullYear() &&
+      taskDate.getMonth() === selected.getMonth() &&
+      taskDate.getDate() === selected.getDate()
+    );
   });
 
   const handleDayClick = date => {
     setSelectedDate(date);
-    const dateStr = date.toISOString().slice(0, 10);
-    const hasTask = tasks.some(
-      t => t.dueDate && new Date(t.dueDate).toISOString().slice(0, 10) === dateStr
-    );
+    // Use local date comparison
+    const hasTask = tasks.some(t => {
+      if (!t.dueDate) return false;
+      const taskDate = new Date(t.dueDate);
+      return (
+        taskDate.getFullYear() === date.getFullYear() &&
+        taskDate.getMonth() === date.getMonth() &&
+        taskDate.getDate() === date.getDate()
+      );
+    });
     if (hasTask) setShowModal(true);
   };
 
@@ -86,10 +99,15 @@ export default function CalendarPage() {
                   value={selectedDate}
                   tileContent={({ date, view }) => {
                     if (view === 'month') {
-                      const dateStr = date.toISOString().slice(0, 10);
-                      const hasTask = tasks.some(
-                        t => t.dueDate && new Date(t.dueDate).toISOString().slice(0, 10) === dateStr
-                      );
+                      const hasTask = tasks.some(t => {
+                        if (!t.dueDate) return false;
+                        const taskDate = new Date(t.dueDate);
+                        return (
+                          taskDate.getFullYear() === date.getFullYear() &&
+                          taskDate.getMonth() === date.getMonth() &&
+                          taskDate.getDate() === date.getDate()
+                        );
+                      });
                       return hasTask ? (
                         <div className="flex justify-center">
                           <span className="w-2 h-2 mt-1 rounded-full bg-blue-500 block"></span>
@@ -250,10 +268,16 @@ export default function CalendarPage() {
             </h2>
             <ul className="space-y-2">
               {tasks
-                .filter(t =>
-                  t.dueDate &&
-                  new Date(t.dueDate).toISOString().slice(0, 10) === selectedDate.toISOString().slice(0, 10)
-                )
+                .filter(t => {
+                  if (!t.dueDate) return false;
+                  const taskDate = new Date(t.dueDate);
+                  const selected = selectedDate;
+                  return (
+                    taskDate.getFullYear() === selected.getFullYear() &&
+                    taskDate.getMonth() === selected.getMonth() &&
+                    taskDate.getDate() === selected.getDate()
+                  );
+                })
                 .map(task => (
                   <li
                     key={task._id}

@@ -1,5 +1,4 @@
 // src/pages/Dashboard.jsx
-
 import { useState, useEffect, useContext } from 'react'
 import { ThemeContext } from '../context/ThemeContext'
 import TaskList from '../components/TaskList'
@@ -11,13 +10,17 @@ import Register from '../components/Register'
 import api from '../api'
 import { AuthContext } from '../context/AuthContext'
 import { useTasks } from '../context/TaskContext'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import ProductivityPanel from '../components/ProductivityPanel'
 import ProductivityTracker from '../components/ProductivityTracker'
 
+//MAIN PAGE dashboard after logging in. This page fetches the tasks and projects from the backend (API if logged in and local storage if they not loged in) and displays them in a list. 
+// It also allows the user to add, edit, and delete tasks and projects. The page also includes a welcome modal for new users and a guest mode for 
+// users who are not logged in.
 export default function Dashboard() {
-  const { user, logout } = useContext(AuthContext)
+  const { user, logout, guestLogin } = useContext(AuthContext)
   const { dark, setDark } = useContext(ThemeContext)
+  const navigate = useNavigate();
 
   // --- Auth State
   const [showLogin, setShowLogin] = useState(false)
@@ -38,7 +41,7 @@ export default function Dashboard() {
 
   // Add state to control showing the welcome modal
   const [showGuestWelcome, setShowGuestWelcome] = useState(
-    () => !user && tasks.length === 0
+    () => !user && !localStorage.getItem('guest')
   )
   // Add state to control a general welcome modal
   const [showWelcome, setShowWelcome] = useState(false)
@@ -94,11 +97,6 @@ export default function Dashboard() {
       localStorage.setItem('projects', JSON.stringify(projects))
     }
   }, [projects, user])
-
-  // --- Auth Handlers
-  const handleLogout = () => {
-    localStorage.removeItem('user')
-  }
 
   const addTask = (newT) => setTasks((ts) => [newT, ...ts])
 
@@ -210,7 +208,7 @@ export default function Dashboard() {
       )}
 
       {/* Guest Welcome Modal */}
-      {showGuestWelcome && !user && (
+      {showGuestWelcome && !user && !localStorage.getItem('guest') && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/40">
           <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 flex flex-col items-center text-center border border-blue-200 dark:border-gray-700">
             <button
@@ -253,11 +251,26 @@ export default function Dashboard() {
             </div>
             <button
               className="mt-4 text-xs text-gray-500 underline hover:text-blue-700"
-              onClick={() => setShowGuestWelcome(false)}
+              type="button"
+              onClick={() => {
+                guestLogin();
+                setShowGuestWelcome(false);
+                navigate('/dashboard');
+              }}
             >
               Continue as Guest
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Guest Welcome Banner for Guest Mode */}
+      {!user && localStorage.getItem('guest') === 'true' && (
+        <div className="w-full bg-yellow-100 dark:bg-yellow-900 text-yellow-900 dark:text-yellow-100 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 mb-6 text-center">
+          <strong>Guest Mode:</strong> Tasks are saved only on this device. <br />
+          <span className="text-sm">
+            Log in or Register to sync and access your tasks on any device.
+          </span>
         </div>
       )}
 
@@ -278,7 +291,7 @@ export default function Dashboard() {
             </div>
             <button
               className="px-3 py-1 rounded bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-500 text-xs"
-              onClick={logout} // or handleLogout() if you prefer
+              onClick={logout} // Logout function
             >
               Logout
             </button>
@@ -512,7 +525,7 @@ export default function Dashboard() {
             </main>
           </>
         ) : (
-          // LOGGED-IN: Full dashboard UI
+          // LOGGED-IN: dashboard 
           <>
             {/* Top Dashboard Actions/Quick Links Bar */}
             <div className="w-full flex flex-row gap-6 mb-8 bg-white/80 dark:bg-gray-800/80 rounded-2xl shadow px-8 py-4">
@@ -532,7 +545,7 @@ export default function Dashboard() {
                 className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 text-white font-bold shadow hover:from-yellow-500 hover:to-yellow-700 transition text-lg"
                 onClick={() => alert('More features coming soon!')}
               >
-                <span role="img" aria-label="star">⭐</span> More
+                <span role="img" aria-label="star">⭐</span> More {/* used unicode emoji character for the white medium star (U+2B50) */}
               </button>
             </div>
 
@@ -542,7 +555,6 @@ export default function Dashboard() {
                 <h2 className="font-semibold text-lg mb-4 text-gray-900 dark:text-gray-100">
                   Menu
                 </h2>
-                {/* Removed Calendar Link from sidebar */}
                 <input
                   type="search"
                   placeholder="Search…"
@@ -654,7 +666,7 @@ export default function Dashboard() {
               {/* Only show the following panels for logged-in users */}
               {user && (
                 <>
-                  {/* Task Details Panel (2) */}
+                  {/* Task Details Panel */}
                   <aside className="col-span-2 p-4 bg-white dark:bg-gray-800 rounded-lg shadow flex flex-col">
                     {selectedTask ? (
                       <TaskDetail task={selectedTask} />
@@ -665,7 +677,7 @@ export default function Dashboard() {
                     )}
                   </aside>
 
-                  {/* Stats Panel (2) */}
+                  {/* Stats Panel */}
                   <aside className="col-span-2 p-4 bg-blue-900/80 dark:bg-blue-900/60 rounded-2xl shadow-xl flex flex-col items-center justify-center gap-6 border border-blue-300 dark:border-blue-800">
                     <h3 className="text-2xl font-bold text-white tracking-wider mb-6">
                       Your Stats
@@ -692,7 +704,7 @@ export default function Dashboard() {
                     </div>
                   </aside>
 
-                  {/* Quick Actions (3) -- optionally hidden on small screens */}
+                  {/* Quick Actions */}
                   <aside className="hidden lg:flex col-span-3 p-4 bg-white dark:bg-gray-800 rounded-lg shadow flex-col gap-6 items-center justify-center">
                     <h2 className="text-lg font-bold text-blue-700 dark:text-blue-200 mb-4">
                       Quick Actions
@@ -954,8 +966,13 @@ export default function Dashboard() {
                     })}
                   </div>
                   {/* Productivity Chart & Learning Schedule below Projects */}
-                  <ProductivityChart tasks={tasks} />
-                  <LearningSchedule />
+                  <div className="flex flex-col md:flex-row gap-6 mt-8">
+                      <ProductivityTracker />
+                    
+                    <div className="flex-1 flex flex-col justify-center">
+                      <LearningSchedule />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

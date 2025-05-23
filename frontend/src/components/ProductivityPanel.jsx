@@ -1,20 +1,25 @@
-//ProductivityPanel.jsx
+// ProductivityPanel.jsx
+
+// Displays a weekly productivity line chart and summary stats for completed, pending, and total tasks. Handles chart errors 
+// gracefully and cleans up Chart.js instances.
+
 // src/components/ProductivityPanel.jsx
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useTasks } from '../context/TaskContext';
-import { Bar } from 'react-chartjs-2';
-import Modal from './Modal';
-import {
+import { Line } from 'react-chartjs-2';
+
+import { // Chart.js imports
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend); // Register Chart.js components
 
 // ErrorBoundary for chart errors
 function ChartErrorBoundary({ children }) {
@@ -60,89 +65,94 @@ const ChartWithCleanup = forwardRef((props, ref) => {
             }
         };
     }, []);
-    return <Bar ref={chartRef} {...props} />;
+    return <Line ref={chartRef} {...props} />;
 });
 
 export default function ProductivityPanel() {
     const { tasks } = useTasks();
-    const [showModal, setShowModal] = useState(false);
-    // Chart data for the last 7 days
+    // Chart data for the next 7 days (today + 6 days)
+    function getLocalDateString(date) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return d.toLocaleDateString();
+    }
     const today = new Date();
+    today.setHours(0,0,0,0);
     const labels = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(today);
-        d.setDate(today.getDate() - (6 - i));
-        return d.toLocaleDateString();
+        d.setDate(today.getDate() + i);
+        return getLocalDateString(d);
     });
+    // Count completed tasks for each day
+    const completedData = labels.map(labelDate =>
+        tasks.filter(t =>
+            t.done &&
+            t.dueDate &&
+            getLocalDateString(new Date(t.dueDate)) === labelDate
+        ).length
+    );
+    // Chart.js data and options
     const data = {
         labels,
-        datasets: [{
-            label: 'Tasks Completed',
-            data: labels.map(labelDate => {
-                return tasks.filter(t =>
-                    t.done &&
-                    new Date(t.updatedAt || t.completedAt || t.dueDate || t.createdAt).toLocaleDateString() === labelDate
-                ).length;
-            }),
-            backgroundColor: 'rgba(59,130,246,0.5)', // Tailwind blue-500/50
-        }]
+        datasets: [
+            {
+                label: 'Completed Tasks',
+                data: completedData,
+                fill: false,
+                borderColor: '#3b82f6', //  blue
+                backgroundColor: '#3b82f6',
+                tension: 0.4,
+                pointRadius: 6,
+                pointBackgroundColor: '#22c55e', // green
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+            }
+        ]
     };
-    const options = {
+    const options = { // Chart.js options
         responsive: true,
-        plugins: { legend: { display: false } },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => `Completed: ${ctx.parsed.y}`
+                }
+            }
+        },
         scales: {
             x: { ticks: { color: '#64748b' }, grid: { display: false } },
             y: { beginAtZero: true, ticks: { color: '#64748b' } }
         }
     };
-    // Unique id for modal chart
-    const [modalChartId, setModalChartId] = useState(null);
-    const openModal = () => {
-        setModalChartId('panel-chart-modal-' + Date.now());
-        setShowModal(true);
-    };
+    // Summary stats
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.done).length;
+    const pending = tasks.filter(t => !t.done).length;
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col items-center justify-center h-full gap-6 border border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-bold mb-2 text-blue-700 dark:text-blue-200">
-                Productivity Overview
+                Productivity This Week
             </h2>
             <div className="w-full">
+                {/* Chart with error boundary */}
                 <ChartErrorBoundary>
-                    <ChartWithCleanup
-                        data={data}
-                        options={options}
-                    />
+                    <Line data={data} options={options} />
                 </ChartErrorBoundary>
             </div>
-            <button
-                onClick={openModal}
-                className="mt-6 px-5 py-2 rounded-lg bg-blue-600 text-white font-medium shadow hover:bg-blue-700 transition"
-            >
-                Show Detailed Progress
-            </button>
-            {showModal && (
-                <Modal onClose={() => setShowModal(false)}>
-                    <div className="p-4">
-                        <h3 className="text-xl font-bold mb-2">Your Progress</h3>
-                        <ChartErrorBoundary>
-                            <ChartWithCleanup
-                                data={data}
-                                options={options}
-                            />
-                        </ChartErrorBoundary>
-                        <ul className="mb-4 mt-4">
-                            <li>Total Tasks: <b>{tasks.length}</b></li>
-                            <li>Completed: <b>{tasks.filter(t => t.done).length}</b></li>
-                            <li>Pending: <b>{tasks.filter(t => !t.done).length}</b></li>
-                        </ul>
-                        <button
-                            className="mt-2 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                            onClick={() => setShowModal(false)}
-                        >
-                            Close
-                        </button>
-                    </div>
-                </Modal>
-            )}
+            {/* Summary stats: total, completed, pending */}
+            <div className="flex flex-col gap-1 w-full mt-4">
+                <div className="flex justify-between text-sm">
+                    <span className="font-medium text-gray-700 dark:text-gray-200">Total Tasks</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{total}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-medium text-green-700 dark:text-green-400">Completed</span>
+                    <span className="font-bold text-green-600 dark:text-green-300">{completed}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-medium text-yellow-700 dark:text-yellow-400">Pending</span>
+                    <span className="font-bold text-yellow-600 dark:text-yellow-300">{pending}</span>
+                </div>
+            </div>
         </div>
     );
 }

@@ -1,70 +1,131 @@
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { useTasks } from '../context/TaskContext'
-import { format, subDays } from 'date-fns'
+// ProductivityTracker.jsx
+// Displays a line chart of completed tasks over the last 7 days, with summary stats.
+// Uses react-chartjs-2 and Chart.js for visualization.
+
+import React from 'react';
+import { useTasks } from '../context/TaskContext';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function ProductivityTracker() {
-  const { tasks } = useTasks()
+  // Get tasks from context
+  const { tasks } = useTasks();
 
-  // Collect 7 days worth of "YYYY-MM-DD" dates (today last)
-  const today = new Date()
-  const days = [...Array(7)].map((_, i) => format(subDays(today, 6 - i), 'yyyy-MM-dd'))
+  // Helper: Get local date string (no time)
+  function getLocalDateString(date) {
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    return d.toLocaleDateString();
+  }
 
-  // Completed tasks by date
-  const completedByDay = tasks
-    .filter(t => t.done && t.updatedAt)
-    .reduce((acc, t) => {
-      const d = new Date(t.updatedAt).toISOString().slice(0, 10)
-      acc[d] = (acc[d] || 0) + 1
-      return acc
-    }, {})
+  // Prepare labels for the last 7 days (including today)
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const labels = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    return getLocalDateString(d);
+  });
 
-  const data = days.map(date => ({
-    date,
-    count: completedByDay[date] || 0
-  }))
+  // Count completed tasks for each day in the last 7 days
+  const completedData = labels.map(labelDate =>
+    tasks.filter(t =>
+      t.done &&
+      t.dueDate &&
+      getLocalDateString(new Date(t.dueDate)) === labelDate
+    ).length
+  );
 
-  // Extra stats
-  const total = tasks.length
-  const done = tasks.filter(t => t.done).length
-  const percent = total > 0 ? Math.round((done / total) * 100) : 0
+  // Chart.js data object
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: 'Completed Tasks',
+        data: completedData,
+        fill: false,
+        borderColor: '#3b82f6', // Tailwind blue-500
+        backgroundColor: '#3b82f6',
+        tension: 0.4,
+        pointRadius: 6,
+        pointBackgroundColor: '#22c55e', // Tailwind green-500
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+      }
+    ]
+  };
 
+  // Chart.js options for appearance and axes
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `Completed: ${ctx.parsed.y}`
+        }
+      }
+    },
+    layout: {
+      padding: { left: 0, right: 0, top: 0, bottom: 0 }
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#64748b',
+          font: { size: 13, weight: 'bold' },
+          maxRotation: 0,
+          minRotation: 0,
+          autoSkip: false
+        },
+        grid: { display: false },
+      },
+      y: { beginAtZero: true, ticks: { color: '#64748b' } }
+    }
+  };
+
+  // Summary statistics
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.done).length;
+  const pending = tasks.filter(t => !t.done).length;
+
+  // Render chart and stats
   return (
-    <div className="p-8 bg-white/90 dark:bg-gray-800/90 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-blue-800 dark:text-blue-100">Productivity Tracker</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Your last 7 days at a glance
-          </p>
-        </div>
-        <div className="flex flex-col items-end">
-          <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{percent}%</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">complete</span>
-        </div>
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 flex flex-col gap-6 border border-gray-200 dark:border-gray-700 w-full h-full">
+      <h2 className="text-lg font-bold mb-2 text-blue-700 dark:text-blue-200">
+        Productivity Tracker
+      </h2>
+      {/* Line chart for completed tasks */}
+      <div className="w-full flex-1" style={{ height: '220px', minWidth: 0 }}>
+        <Line data={data} options={options} />
       </div>
-      {data.every(d => d.count === 0) ? (
-        <div className="text-center text-gray-400 py-12">No completed tasks yet.<br />Complete some tasks to see your streak!</div>
-      ) : (
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="date" tick={{ fill: "#64748b", fontSize: 12 }} />
-            <YAxis allowDecimals={false} tick={{ fill: "#64748b" }} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: "#f1f5f9", borderRadius: 8, border: "none", color: "#1e293b" }}
-              labelStyle={{ color: "#3b82f6" }}
-              itemStyle={{ color: "#3b82f6" }}
-              formatter={(value) => [value, "Tasks completed"]}
-            />
-            <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-      <div className="flex justify-between items-center mt-6">
-        <span className="text-sm text-gray-600 dark:text-gray-300">Completed: <b>{done}</b></span>
-        <span className="text-sm text-gray-600 dark:text-gray-300">Pending: <b>{total - done}</b></span>
-        <span className="text-sm text-gray-600 dark:text-gray-300">Total: <b>{total}</b></span>
+      {/* Summary stats below the chart */}
+      <div className="flex flex-col gap-1 w-full mt-4">
+        <div className="flex justify-between text-sm">
+          <span className="font-medium text-gray-700 dark:text-gray-200">Total Tasks</span>
+          <span className="font-bold text-gray-900 dark:text-white">{total}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="font-medium text-green-700 dark:text-green-400">Completed</span>
+          <span className="font-bold text-green-600 dark:text-green-300">{completed}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="font-medium text-yellow-700 dark:text-yellow-400">Pending</span>
+          <span className="font-bold text-yellow-600 dark:text-yellow-300">{pending}</span>
+        </div>
       </div>
     </div>
-  )
+  );
 }

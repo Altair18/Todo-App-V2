@@ -1,13 +1,18 @@
 // src/components/TaskForm.jsx
+
+// TaskForm is a controlled form component for creating new tasks.
+// It collects title, description, due date, labels, and priority, then calls onCreate with the new task object.
 import { useState } from 'react';
 
 export default function TaskForm({ onCreate }) {
+  // State for each form field
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [labelsStr, setLabelsStr] = useState('');
   const [priority, setPriority] = useState('medium');
 
+  // Handle form submission
   const handleSubmit = e => {
     e.preventDefault();
 
@@ -22,7 +27,7 @@ export default function TaskForm({ onCreate }) {
       return;
     }
 
-    // No API call here! Just construct task and call onCreate
+    // Build the new task object
     const task = {
       title,
       description,
@@ -34,7 +39,7 @@ export default function TaskForm({ onCreate }) {
 
     onCreate(task);
 
-    // Reset form
+    // Reset form fields after submit
     setTitle('');
     setDescription('');
     setDueDate('');
@@ -46,7 +51,7 @@ export default function TaskForm({ onCreate }) {
     <form onSubmit={handleSubmit} className="mb-6 p-4 border rounded space-y-4 dark:text-white">
       <h2 className="text-lg font-medium">New Task</h2>
 
-      {/* Title */}
+      {/* Title input (required) */}
       <input
         type="text"
         value={title}
@@ -56,7 +61,7 @@ export default function TaskForm({ onCreate }) {
         required
       />
 
-      {/* Description */}
+      {/* Description input */}
       <textarea
         value={description}
         onChange={e => setDescription(e.target.value)}
@@ -64,7 +69,7 @@ export default function TaskForm({ onCreate }) {
         className="w-full p-2 border rounded dark:text-black"
       />
 
-      {/* Due Date */}
+      {/* Due Date input */}
       <input
         type="date"
         value={dueDate}
@@ -72,7 +77,7 @@ export default function TaskForm({ onCreate }) {
         className="w-full p-2 border rounded dark:text-black"
       />
 
-      {/* Labels */}
+      {/* Labels input (comma-separated) */}
       <input
         type="text"
         value={labelsStr}
@@ -81,7 +86,7 @@ export default function TaskForm({ onCreate }) {
         className="w-full p-2 border rounded dark:text-black"
       />
 
-      {/* Priority */}
+      {/* Priority select */}
       <div>
         <label className="block mb-1 text-sm font-medium">Priority</label>
         <select
@@ -95,7 +100,7 @@ export default function TaskForm({ onCreate }) {
         </select>
       </div>
 
-      {/* Submit */}
+      {/* Submit button */}
       <button
         type="submit"
         className="w-full px-4 py-2 bg-green-500 text-white rounded"

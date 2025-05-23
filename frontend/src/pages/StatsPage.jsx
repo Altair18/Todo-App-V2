@@ -1,10 +1,11 @@
 import { useTasks } from '../context/TaskContext';
 
+//Takes all tasks into simple metrics like total, completed, pending and completion percentage and shows a horizontal progress bar
 export default function StatsPage() {
   const { tasks } = useTasks();
   const completed = tasks.filter(t => t.done).length;
   const pending = tasks.filter(t => !t.done).length;
-  const percent = tasks.length === 0 ? 0 : Math.round((completed / tasks.length) * 100);
+  const percent = tasks.length === 0 ? 0 : Math.round((completed / tasks.length) * 100); // Calculate completion percentage
 
   return (
     <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 px-4 py-8 flex flex-col items-center">
